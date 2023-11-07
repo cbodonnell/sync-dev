@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dbpix314mddk6"]
+
+[ext_resource type="Script" path="res://Scenes/Main/Server.cs" id="1_funxw"]
+
+[node name="Server" type="Node"]
+script = ExtResource("1_funxw")

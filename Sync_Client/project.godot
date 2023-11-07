@@ -1,0 +1,33 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Sync_Client"
+run/main_scene="res://Scenes/Menu/Menu.tscn"
+config/features=PackedStringArray("4.1", "C#", "Mobile")
+config/icon="res://icon.svg"
+
+[autoload]
+
+Server="*res://Scenes/Singletons/Server.cs"
+Global="*res://Scenes/Singletons/Global.cs"
+
+[dotnet]
+
+project/assembly_name="Client"
+
+[physics]
+
+common/physics_ticks_per_second=144
+
+[rendering]
+
+renderer/rendering_method="mobile"
