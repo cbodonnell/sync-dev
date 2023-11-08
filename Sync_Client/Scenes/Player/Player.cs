@@ -17,9 +17,16 @@ public partial class Player : CharacterBody2D
 
 	private Server server;
 
+	private AnimationPlayer animationPlayer;
+
+	private bool flipH = false;
+
+
 	public override void _Ready()
 	{
 		server = GetNode<Server>("/root/Server");
+
+		animationPlayer = GetNode<AnimationPlayer>("AnimationPlayer");
 	}
 
 	public override void _PhysicsProcess(double delta)
@@ -36,22 +43,41 @@ public partial class Player : CharacterBody2D
 
 		// Get the input direction and handle the movement/deceleration.
 		// As good practice, you should replace UI actions with custom gameplay actions.
-		Vector2 direction = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down");
-		if (direction != Vector2.Zero)
+		float direction = Input.GetAxis("ui_left", "ui_right");
+		
+		if (direction == -1) {
+			flipH = true;
+		} else if (direction == 1) {
+			flipH = false;
+		}
+		GetNode<AnimatedSprite2D>("AnimatedSprite2D").FlipH = flipH;
+
+		if (direction != 0)
 		{
-			velocity.X = direction.X * Speed;
+			velocity.X = direction * Speed;
 		}
 		else
 		{
 			velocity.X = Mathf.MoveToward(Velocity.X, 0, Speed);
 		}
 
-		Velocity = velocity;
-		MoveAndSlide();
-	}
+		if (Velocity.Y == 0) {
+			if (Velocity.X != 0) {
+				animationPlayer.Play("Run");
+			} else {
+				animationPlayer.Play("Idle");
+			}
+		}
 
-	private void _on_timer_timeout()
-	{
-		server.UpdatePosition(GlobalPosition);
+		if (Velocity.Y < 0) {
+			animationPlayer.Play("Jump");
+		} else if (Velocity.Y > 0) {
+			animationPlayer.Play("Fall");
+		}
+
+		Velocity = velocity;
+
+		MoveAndSlide();
+		server.UpdatePosition(GlobalPosition, Velocity, flipH);
 	}
 }

@@ -44,11 +44,11 @@ public partial class Server : Node
 	private void OnPeerConnected(long id)
 	{
 		GD.Print("Peer connected: " + id);
-		Player newPlayer = new Player(id, $"Player {id}", new Vector2(500, 500));
+		Player newPlayer = new Player(id, $"Player {id}", new Vector2(500, 500), new Vector2(0, 0), false);
 		gameData.AddPlayer(newPlayer);
-		RpcId(0, nameof(InstancePlayer), newPlayer.GetId(), newPlayer.GetName(), newPlayer.GetPosition());
+		RpcId(0, nameof(InstancePlayer), newPlayer.GetId(), newPlayer.GetName(), newPlayer.GetPosition(), newPlayer.GetVelocity(), newPlayer.GetFlipH());
 		gameData.Players.FindAll(p => p.GetId() != id).ForEach(player => {
-			RpcId(id, nameof(InstancePlayer), player.GetId(), player.GetName(), player.GetPosition());
+			RpcId(id, nameof(InstancePlayer), player.GetId(), player.GetName(), player.GetPosition(), player.GetVelocity(), player.GetFlipH());
 		});
 	}
 
@@ -60,24 +60,27 @@ public partial class Server : Node
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority)]
-	private void InstancePlayer(long id, string name, Vector2 position) {}
+	private void InstancePlayer(long id, string name, Vector2 position, float direction) {}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority)]
 	private void RemovePlayer(long id) {}
 	
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
-	private void RequestUpdatePosition(Vector2 position) {
+	private void RequestUpdatePosition(Vector2 position, Vector2 velocity, bool flipH) {
 		int id = Multiplayer.GetRemoteSenderId();
 		// TODO: validate position
+		GD.Print($"RequestUpdatePosition: {id} {position} {velocity} {flipH}");
 		Player player = gameData.Players.Find(player => player.GetId() == id);
 		if (player == null) {
 			GD.PrintErr($"Player {id} not found");
 			return;
 		}
 		player.SetPosition(position);
-		RpcId(0, nameof(UpdatePositionSuccess), id, player.GetPosition());
+		player.SetVelocity(velocity);
+		player.SetFlipH(flipH);
+		RpcId(0, nameof(UpdatePositionSuccess), id, player.GetPosition(), player.GetVelocity(), player.GetFlipH());
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
-	private void UpdatePositionSuccess(long id, Vector2 position) {}
+	private void UpdatePositionSuccess(long id, Vector2 position, bool flipH) {}
 }

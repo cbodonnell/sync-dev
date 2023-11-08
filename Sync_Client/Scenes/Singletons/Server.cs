@@ -54,10 +54,10 @@ public partial class Server : Node
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority)]
-	private void InstancePlayer(long id, string name, Vector2 position) {
-		GD.Print($"Instance player {id} at {position}");
+	private void InstancePlayer(long id, string name, Vector2 position, Vector2 velocity, float direction) {
+		GD.Print($"Instance player {id}: {name} {position} {velocity} {direction}");
 		PackedScene scene = id == peer.GetUniqueId() ? playerScene : otherPlayerScene;
-		Node2D player = Global.InstanceNode2D(scene, GetNode<Node2D>("/root/World"), position);
+		CharacterBody2D player = Global.InstancePlayer(scene, GetNode<Node2D>("/root/World"), position, velocity, direction);
 		// this is the node name, not the player's name
 		player.Name = id.ToString();
 	}
@@ -65,7 +65,7 @@ public partial class Server : Node
 	[Rpc(MultiplayerApi.RpcMode.Authority)]
 	private void RemovePlayer(long id) {
 		GD.Print($"Remove player {id}");
-		Node2D player = GetNode<Node2D>("/root/World").GetNodeOrNull<Node2D>(id.ToString());
+		CharacterBody2D player = GetNode<Node2D>("/root/World").GetNodeOrNull<CharacterBody2D>(id.ToString());
 		if (player == null) {
 			GD.PrintErr($"Player {id} not found");
 			return;
@@ -73,22 +73,30 @@ public partial class Server : Node
 		player.QueueFree();
 	}
 
-	public void UpdatePosition(Vector2 position) {
-		// TODO: client should only send input, not position
-		RpcId(0, nameof(RequestUpdatePosition), position);
+	public void UpdatePosition(Vector2 position, Vector2 velocity, bool flipH) {
+		// GD.Print($"Update position {position} {velocity} {flipH}");
+		// TODO: send direction as well
+		RpcId(0, nameof(RequestUpdatePosition), position, velocity, flipH);
 	}
 	
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
-	private void RequestUpdatePosition(Vector2 position) {}
+	private void RequestUpdatePosition(Vector2 position, Vector2 velocity, bool flipH) {}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
-	private void UpdatePositionSuccess(long id, Vector2 position) {
+	private void UpdatePositionSuccess(long id, Vector2 position, Vector2 velocity, bool flipH) {
+		// GD.Print($"Update position success {id} {position} {velocity} {flipH}");
 		if (id == peer.GetUniqueId()) {
 			// TODO: handle within client-side prediction
 			return;
 		} else {
-			Node2D player = GetNode<Node2D>("/root/World").GetNodeOrNull<Node2D>(id.ToString());
-			player.GlobalPosition = player.GlobalPosition.Lerp(position, 0.5f);
+			CharacterBody2D player = GetNode<Node2D>("/root/World").GetNodeOrNull<CharacterBody2D>(id.ToString());
+			if (player == null) {
+				GD.PrintErr($"Player {id} not found");
+				return;
+			}
+			GetTree().CreateTween().TweenProperty(player, "position", position, 0.05f);
+			player.Velocity = velocity;
+			player.GetNode<AnimatedSprite2D>("AnimatedSprite2D").FlipH = flipH;
 		}
 	}
 }
