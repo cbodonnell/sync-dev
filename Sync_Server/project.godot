@@ -23,6 +23,10 @@ GameData="*res://Singletons/GameData.cs"
 
 project/assembly_name="Server"
 
+[physics]
+
+common/physics_ticks_per_second=20
+
 [rendering]
 
 renderer/rendering_method="mobile"

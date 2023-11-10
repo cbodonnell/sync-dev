@@ -1,5 +1,7 @@
 using Godot;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 public partial class Server : Node
 {
@@ -40,16 +42,20 @@ public partial class Server : Node
 
 		GD.Print("Waiting for connections on port " + port.ToString());
 	}
+
+	public override void _PhysicsProcess(double delta)
+	{
+		// copy game data when using in the game loop
+		// GD.Print("Running game loop");
+		List<Player> playersCopy = gameData.Players.ToList();
+		playersCopy.ForEach(player => {
+			RpcId(0, nameof(UpdatePosition), player.GetId(), player.GetPosition(), player.GetVelocity(), player.GetFlipH());
+		});
+	}
 	
 	private void OnPeerConnected(long id)
 	{
 		GD.Print("Peer connected: " + id);
-		Player newPlayer = new Player(id, $"Player {id}", new Vector2(500, 500), new Vector2(0, 0), false);
-		gameData.AddPlayer(newPlayer);
-		RpcId(0, nameof(InstancePlayer), newPlayer.GetId(), newPlayer.GetName(), newPlayer.GetPosition(), newPlayer.GetVelocity(), newPlayer.GetFlipH());
-		gameData.Players.FindAll(p => p.GetId() != id).ForEach(player => {
-			RpcId(id, nameof(InstancePlayer), player.GetId(), player.GetName(), player.GetPosition(), player.GetVelocity(), player.GetFlipH());
-		});
 	}
 
 	private void OnPeerDisconnected(long id)
@@ -57,6 +63,18 @@ public partial class Server : Node
 		GD.Print("Peer disconnected: " + id);
 		gameData.RemovePlayer(gameData.Players.Find(player => player.GetId() == id));
 		RpcId(0, nameof(RemovePlayer), id);
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void RequestSelectCharacter(string character) {
+		int id = Multiplayer.GetRemoteSenderId();
+		GD.Print($"RequestSelectCharacter: {id} {character}");
+		Player newPlayer = new Player(id, $"Player {id}", character, new Vector2(500, 500), new Vector2(0, 0), false);
+		gameData.AddPlayer(newPlayer);
+		RpcId(0, nameof(InstancePlayer), newPlayer.GetId(), newPlayer.GetName(), newPlayer.GetCharacter(), newPlayer.GetPosition(), newPlayer.GetVelocity(), newPlayer.GetFlipH());
+		gameData.Players.FindAll(p => p.GetId() != id).ForEach(player => {
+			RpcId(id, nameof(InstancePlayer), player.GetId(), player.GetName(), player.GetCharacter(), player.GetPosition(), player.GetVelocity(), player.GetFlipH());
+		});
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority)]
@@ -68,19 +86,20 @@ public partial class Server : Node
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
 	private void RequestUpdatePosition(Vector2 position, Vector2 velocity, bool flipH) {
 		int id = Multiplayer.GetRemoteSenderId();
+		// GD.Print($"RequestUpdatePosition: {id} {position} {velocity} {flipH}");
 		// TODO: validate position
-		GD.Print($"RequestUpdatePosition: {id} {position} {velocity} {flipH}");
+		// TODO: data should be timestamped
+		// TODO: data should be indexed
 		Player player = gameData.Players.Find(player => player.GetId() == id);
 		if (player == null) {
-			GD.PrintErr($"Player {id} not found");
+			GD.PrintErr($"RequestUpdatePosition: Player {id} not found");
 			return;
 		}
 		player.SetPosition(position);
 		player.SetVelocity(velocity);
 		player.SetFlipH(flipH);
-		RpcId(0, nameof(UpdatePositionSuccess), id, player.GetPosition(), player.GetVelocity(), player.GetFlipH());
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
-	private void UpdatePositionSuccess(long id, Vector2 position, bool flipH) {}
+	private void UpdatePosition(long id, Vector2 position, Vector2 velocity, bool flipH) {}
 }

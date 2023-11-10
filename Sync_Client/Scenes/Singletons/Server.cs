@@ -14,10 +14,11 @@ public partial class Server : Node
 	private PackedScene playerScene = (PackedScene)GD.Load("res://Scenes/Player/Player.tscn");
 	private PackedScene otherPlayerScene = (PackedScene)GD.Load("res://Scenes/OtherPlayer/OtherPlayer.tscn");
 
-
 	private ENetMultiplayerPeer peer = new ENetMultiplayerPeer();
 
 	private ENetConnection.CompressionMode compressionMode = ENetConnection.CompressionMode.RangeCoder;
+
+	private bool startedGame = false;
 
 
 	// Called when the node enters the scene tree for the first time.
@@ -44,7 +45,7 @@ public partial class Server : Node
 	private void OnConnectedToServer()
 	{
 		GD.Print("Connected to server");
-		GetTree().ChangeSceneToFile("res://Scenes/World/World.tscn");
+		GetTree().ChangeSceneToFile("res://Scenes/CharacterSelect/CharacterSelect.tscn");
 	}
 
 	private void OnConnectionFailed()
@@ -53,13 +54,29 @@ public partial class Server : Node
 		GetNode<Label>("/root/Menu/Label").Text = "Connection failed";
 	}
 
+	public void SelectCharacter(string character) {
+		GD.Print($"Request select character {character}");
+		GetTree().ChangeSceneToFile("res://Scenes/World/World.tscn");
+		startedGame = true;
+		RpcId(0, nameof(RequestSelectCharacter), character);
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void RequestSelectCharacter(string character) {}
+
 	[Rpc(MultiplayerApi.RpcMode.Authority)]
-	private void InstancePlayer(long id, string name, Vector2 position, Vector2 velocity, float direction) {
-		GD.Print($"Instance player {id}: {name} {position} {velocity} {direction}");
-		PackedScene scene = id == peer.GetUniqueId() ? playerScene : otherPlayerScene;
-		CharacterBody2D player = Global.InstancePlayer(scene, GetNode<Node2D>("/root/World"), position, velocity, direction);
-		// this is the node name, not the player's name
-		player.Name = id.ToString();
+	private void InstancePlayer(long id, string name, string character, Vector2 position, Vector2 velocity, float direction) {
+		GD.Print($"Instance player {id}: {name} {character} {position} {velocity} {direction}");
+		if (id == peer.GetUniqueId()) {
+			Player player = Global.InstancePlayer<Player>(playerScene, id, character, position, velocity, direction);
+			player.Character = character;
+        	GetNode<Node2D>("/root/World").AddChild(player);
+		} else {
+			OtherPlayer player = Global.InstancePlayer<OtherPlayer>(otherPlayerScene, id, character, position, velocity, direction);
+			player.Character = character;
+			GetNode<Node2D>("/root/World").AddChild(player);
+		}
+
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority)]
@@ -67,7 +84,7 @@ public partial class Server : Node
 		GD.Print($"Remove player {id}");
 		CharacterBody2D player = GetNode<Node2D>("/root/World").GetNodeOrNull<CharacterBody2D>(id.ToString());
 		if (player == null) {
-			GD.PrintErr($"Player {id} not found");
+			GD.PrintErr($"RemovePlayer: Player {id} not found");
 			return;
 		}
 		player.QueueFree();
@@ -83,20 +100,20 @@ public partial class Server : Node
 	private void RequestUpdatePosition(Vector2 position, Vector2 velocity, bool flipH) {}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
-	private void UpdatePositionSuccess(long id, Vector2 position, Vector2 velocity, bool flipH) {
-		// GD.Print($"Update position success {id} {position} {velocity} {flipH}");
+	private void UpdatePosition(long id, Vector2 position, Vector2 velocity, bool flipH) {
+		if (!startedGame) return;
+		// GD.Print($"Update position {id} {position} {velocity} {flipH}");
 		if (id == peer.GetUniqueId()) {
 			// TODO: handle within client-side prediction
 			return;
 		} else {
-			CharacterBody2D player = GetNode<Node2D>("/root/World").GetNodeOrNull<CharacterBody2D>(id.ToString());
+			OtherPlayer player = GetNode<Node2D>("/root/World").GetNodeOrNull<OtherPlayer>(id.ToString());
 			if (player == null) {
-				GD.PrintErr($"Player {id} not found");
+				GD.PrintErr($"UpdatePosition: Player {id} not found");
 				return;
 			}
-			GetTree().CreateTween().TweenProperty(player, "position", position, 0.05f);
-			player.Velocity = velocity;
-			player.GetNode<AnimatedSprite2D>("AnimatedSprite2D").FlipH = flipH;
+			// GD.Print($"Update player {id} [{player.Character}]: {position} {velocity} {flipH}");
+			Global.UpdatePlayer(player, position, velocity, flipH);
 		}
 	}
 }

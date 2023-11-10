@@ -24,10 +24,6 @@ Global="*res://Scenes/Singletons/Global.cs"
 
 project/assembly_name="Client"
 
-[physics]
-
-common/physics_ticks_per_second=144
-
 [rendering]
 
 renderer/rendering_method="mobile"

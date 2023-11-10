@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3 uid="uid://x7m00clwb3jc"]
+
+[ext_resource type="Script" path="res://Scenes/CharacterSelect/CharacterSelect.cs" id="1_j1ldg"]
+
+[node name="CharacterSelect" type="Node2D"]
+script = ExtResource("1_j1ldg")
+
+[node name="NinjaFrog" type="Button" parent="."]
+offset_left = 373.0
+offset_top = 312.0
+offset_right = 563.0
+offset_bottom = 368.0
+text = "NinjaFrog"
+
+[node name="MaskDude" type="Button" parent="."]
+offset_left = 594.0
+offset_top = 312.0
+offset_right = 784.0
+offset_bottom = 368.0
+text = "MaskDude"
+
+[connection signal="pressed" from="NinjaFrog" to="." method="_on_ninja_frog_pressed"]
+[connection signal="pressed" from="MaskDude" to="." method="_on_mask_dude_pressed"]

@@ -3,16 +3,25 @@ using System;
 
 public partial class Global : Node
 {
-    public static CharacterBody2D InstancePlayer(PackedScene packedScene, Node parentNode, Vector2 position, Vector2 velocity, float direction) {
-        var instance = packedScene.Instantiate<CharacterBody2D>();
+    public static T InstancePlayer<T>(PackedScene packedScene, long id, string character, Vector2 position, Vector2 velocity, float direction) where T : CharacterBody2D
+    {
+        var instance = packedScene.Instantiate<T>();
+        instance.Name = id.ToString();
         instance.GlobalPosition = position;
         instance.Velocity = velocity;
+
         if (direction == -1) {
-            instance.GetNode<AnimatedSprite2D>("AnimatedSprite2D").FlipH = true;
+            instance.GetNode<AnimatedSprite2D>(character).FlipH = true;
         } else if (direction == 1) {
-            instance.GetNode<AnimatedSprite2D>("AnimatedSprite2D").FlipH = false;
+            instance.GetNode<AnimatedSprite2D>(character).FlipH = false;
         }
-        parentNode.AddChild(instance);
         return instance;
+    }
+
+    public static void UpdatePlayer(OtherPlayer player, Vector2 position, Vector2 velocity, bool flipH)
+    {
+			player.CreateTween().TweenProperty(player, "position", position, 0.05f);
+			player.Velocity = velocity;
+			player.AnimatedSprite2D.FlipH = flipH;
     }
 }
