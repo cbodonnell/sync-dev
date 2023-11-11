@@ -1,5 +1,8 @@
 using Godot;
+using Newtonsoft.Json;
+using Shared;
 using System;
+using System.Collections.Generic;
 
 public partial class Server : Node
 {
@@ -19,6 +22,7 @@ public partial class Server : Node
 	private ENetConnection.CompressionMode compressionMode = ENetConnection.CompressionMode.RangeCoder;
 
 	private bool startedGame = false;
+	private ulong lastGameStateUpdate = 0;
 
 
 	// Called when the node enters the scene tree for the first time.
@@ -65,24 +69,24 @@ public partial class Server : Node
 	private void RequestSelectCharacter(string character) {}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority)]
-	private void InstancePlayer(long id, string name, string character, Vector2 position, Vector2 velocity, float direction) {
-		GD.Print($"Instance player {id}: {name} {character} {position} {velocity} {direction}");
-		if (id == peer.GetUniqueId()) {
-			Player player = Global.InstancePlayer<Player>(playerScene, id, character, position, velocity, direction);
-			player.Character = character;
+	private void InstancePlayer(string id, string data) {
+		if (!startedGame) return;
+		GD.Print($"Instance player {id}: {data}");
+		PlayerUpdate playerUpdate = JsonConvert.DeserializeObject<PlayerUpdate>(data);
+		if (id == peer.GetUniqueId().ToString()) {
+			Player player = Global.InstancePlayer(playerScene, id, playerUpdate);
         	GetNode<Node2D>("/root/World").AddChild(player);
 		} else {
-			OtherPlayer player = Global.InstancePlayer<OtherPlayer>(otherPlayerScene, id, character, position, velocity, direction);
-			player.Character = character;
+			OtherPlayer player = Global.InstanceOtherPlayer(otherPlayerScene, id, playerUpdate);
 			GetNode<Node2D>("/root/World").AddChild(player);
 		}
 
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority)]
-	private void RemovePlayer(long id) {
+	private void RemovePlayer(string id) {
 		GD.Print($"Remove player {id}");
-		CharacterBody2D player = GetNode<Node2D>("/root/World").GetNodeOrNull<CharacterBody2D>(id.ToString());
+		CharacterBody2D player = GetNode<Node2D>("/root/World").GetNodeOrNull<CharacterBody2D>(id);
 		if (player == null) {
 			GD.PrintErr($"RemovePlayer: Player {id} not found");
 			return;
@@ -90,30 +94,46 @@ public partial class Server : Node
 		player.QueueFree();
 	}
 
-	public void UpdatePosition(Vector2 position, Vector2 velocity, bool flipH) {
+	public void SendPlayerUpdate(PlayerUpdate playerUpdate) {
 		// GD.Print($"Update position {position} {velocity} {flipH}");
 		// TODO: send direction as well
-		RpcId(0, nameof(RequestUpdatePosition), position, velocity, flipH);
+		string data = JsonConvert.SerializeObject(playerUpdate);
+		RpcId(0, nameof(RequestUpdatePlayer), data);
 	}
 	
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
-	private void RequestUpdatePosition(Vector2 position, Vector2 velocity, bool flipH) {}
+	private void RequestUpdatePlayer(string data) {}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
-	private void UpdatePosition(long id, Vector2 position, Vector2 velocity, bool flipH) {
+	private void UpdateGameState(string data) {
 		if (!startedGame) return;
-		// GD.Print($"Update position {id} {position} {velocity} {flipH}");
-		if (id == peer.GetUniqueId()) {
-			// TODO: handle within client-side prediction
+		// GD.Print($"Update UpdateGameState {data}");
+		GameState gameState = JsonConvert.DeserializeObject<GameState>(data);
+
+		if (gameState.T < lastGameStateUpdate) {
+			GD.PrintErr($"UpdateGameState: Received old game state {gameState.T} < {lastGameStateUpdate}");
 			return;
-		} else {
-			OtherPlayer player = GetNode<Node2D>("/root/World").GetNodeOrNull<OtherPlayer>(id.ToString());
-			if (player == null) {
-				GD.PrintErr($"UpdatePosition: Player {id} not found");
-				return;
+		}
+		lastGameStateUpdate = gameState.T;
+
+		foreach (KeyValuePair<string, PlayerUpdate> entry in gameState.P)
+		{
+			string id = entry.Key;
+			PlayerUpdate playerUpdate = entry.Value;
+			if (id == peer.GetUniqueId().ToString()) {
+				// TODO: handle within client-side prediction
+			} else {
+				OtherPlayer existingPlayer = GetNode<Node2D>("/root/World").GetNodeOrNull<OtherPlayer>(id);
+				if (existingPlayer != null) {
+					// GD.Print($"Update player {id}: {playerUpdate}");
+					Global.UpdateOtherPlayer(existingPlayer, playerUpdate);
+				} else {
+					GD.Print($"UpdateGameState: Player {id} not found. Instancing...");
+					// TODO: DRY this out
+					OtherPlayer player = Global.InstanceOtherPlayer(otherPlayerScene, id, playerUpdate);
+					GetNode<Node2D>("/root/World").AddChild(player);
+				}
 			}
-			// GD.Print($"Update player {id} [{player.Character}]: {position} {velocity} {flipH}");
-			Global.UpdatePlayer(player, position, velocity, flipH);
 		}
 	}
 }

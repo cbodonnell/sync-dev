@@ -588,7 +588,7 @@ sprite_frames = SubResource("SpriteFrames_u0fkv")
 animation = &"Idle"
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
-root_node = NodePath("")
+root_node = NodePath("../MaskDude")
 autoplay = "Idle"
 libraries = {
 "": SubResource("AnimationLibrary_382px")

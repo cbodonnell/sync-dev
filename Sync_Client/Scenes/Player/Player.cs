@@ -1,6 +1,9 @@
 using Godot;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
+using Shared;
 
 public partial class Player : CharacterBody2D
 {
@@ -21,9 +24,8 @@ public partial class Player : CharacterBody2D
 	private AnimatedSprite2D animatedSprite2D;
 	private AnimationPlayer animationPlayer;
 
-	private bool flipH = false;
-
 	public string Character = "NinjaFrog";
+	public bool FlipH = false;
 
 	private Dictionary<string, PackedScene> characterScenes = new Dictionary<string, PackedScene>()
 	{
@@ -37,6 +39,7 @@ public partial class Player : CharacterBody2D
 		server = GetNode<Server>("/root/Server");
 		
 		animatedSprite2D = characterScenes[Character].Instantiate<AnimatedSprite2D>();
+		animatedSprite2D.FlipH = FlipH;
 		AddChild(animatedSprite2D);
 
 		animationPlayer = GetNode<AnimationPlayer>("AnimationPlayer");
@@ -44,6 +47,12 @@ public partial class Player : CharacterBody2D
 	}
 
 	public override void _PhysicsProcess(double delta)
+	{
+		ComputePhysics(delta);
+		SendPlayerUpdate();
+	}
+
+	private void ComputePhysics(double delta)
 	{
 		Vector2 velocity = Velocity;
 
@@ -60,11 +69,11 @@ public partial class Player : CharacterBody2D
 		float direction = Input.GetAxis("ui_left", "ui_right");
 		
 		if (direction == -1) {
-			flipH = true;
+			FlipH = true;
 		} else if (direction == 1) {
-			flipH = false;
+			FlipH = false;
 		}
-		animatedSprite2D.FlipH = flipH;
+		animatedSprite2D.FlipH = FlipH;
 
 		if (direction != 0)
 		{
@@ -92,6 +101,18 @@ public partial class Player : CharacterBody2D
 		Velocity = velocity;
 
 		MoveAndSlide();
-		server.UpdatePosition(GlobalPosition, Velocity, flipH);
+	}
+
+	private void SendPlayerUpdate()
+	{
+		PlayerUpdate playerUpdate = new PlayerUpdate()
+		{
+			T = Time.GetTicksMsec(),
+			P = GlobalPosition,
+			V = Velocity,
+			F = FlipH,
+			C = Character,
+		};
+		server.SendPlayerUpdate(playerUpdate);
 	}
 }

@@ -5,10 +5,11 @@ using System.Collections.Generic;
 public partial class OtherPlayer : CharacterBody2D
 {
 
-	public AnimatedSprite2D AnimatedSprite2D;
+	private AnimatedSprite2D animatedSprite2D;
 	private AnimationPlayer animationPlayer;
 
 	public string Character = "MaskDude";
+	public bool FlipH = false;
 
 	private Dictionary<string, PackedScene> characterScenes = new Dictionary<string, PackedScene>()
 	{
@@ -20,16 +21,19 @@ public partial class OtherPlayer : CharacterBody2D
 
 	public override void _Ready()
 	{
-		AnimatedSprite2D = characterScenes[Character].Instantiate<AnimatedSprite2D>();
-		AddChild(AnimatedSprite2D);
+		animatedSprite2D = characterScenes[Character].Instantiate<AnimatedSprite2D>();
+		animatedSprite2D.FlipH = FlipH;
+		AddChild(animatedSprite2D);
 
 		animationPlayer = GetNode<AnimationPlayer>("AnimationPlayer");
-		animationPlayer.RootNode = $"../{AnimatedSprite2D.Name}";
+		animationPlayer.RootNode = $"../{animatedSprite2D.Name}";
 	}
 
 	public override void _PhysicsProcess(double delta)
 	{
 		// GD.Print($"OtherPlayer: {Velocity}");
+		animatedSprite2D.FlipH = FlipH;
+
 		if (Velocity.Y == 0) {
 			if (Velocity.X != 0) {
 				animationPlayer.Play("Run");
@@ -43,6 +47,5 @@ public partial class OtherPlayer : CharacterBody2D
 		} else if (Velocity.Y > 0) {
 			animationPlayer.Play("Fall");
 		}
-
 	}
 }

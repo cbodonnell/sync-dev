@@ -1,27 +1,33 @@
 using Godot;
+using Shared;
 using System;
 
 public partial class Global : Node
 {
-    public static T InstancePlayer<T>(PackedScene packedScene, long id, string character, Vector2 position, Vector2 velocity, float direction) where T : CharacterBody2D
-    {
-        var instance = packedScene.Instantiate<T>();
-        instance.Name = id.ToString();
-        instance.GlobalPosition = position;
-        instance.Velocity = velocity;
-
-        if (direction == -1) {
-            instance.GetNode<AnimatedSprite2D>(character).FlipH = true;
-        } else if (direction == 1) {
-            instance.GetNode<AnimatedSprite2D>(character).FlipH = false;
-        }
-        return instance;
+    public static Player InstancePlayer(PackedScene scene, string id, PlayerUpdate playerUpdate) {
+        Player player = scene.Instantiate<Player>();
+        player.Name = id;
+        player.GlobalPosition = playerUpdate.P;
+        player.Velocity = playerUpdate.V;
+        player.Character = playerUpdate.C;
+        player.FlipH = playerUpdate.F;
+        return player;
     }
 
-    public static void UpdatePlayer(OtherPlayer player, Vector2 position, Vector2 velocity, bool flipH)
+    public static OtherPlayer InstanceOtherPlayer(PackedScene scene, string id, PlayerUpdate playerUpdate) {
+        OtherPlayer player = scene.Instantiate<OtherPlayer>();
+        player.Name = id;
+        player.GlobalPosition = playerUpdate.P;
+        player.Velocity = playerUpdate.V;
+        player.Character = playerUpdate.C;
+        player.FlipH = playerUpdate.F;
+        return player;
+    }
+    
+    public static void UpdateOtherPlayer(OtherPlayer player, PlayerUpdate playerUpdate)
     {
-			player.CreateTween().TweenProperty(player, "position", position, 0.05f);
-			player.Velocity = velocity;
-			player.AnimatedSprite2D.FlipH = flipH;
+			player.CreateTween().TweenProperty(player, "position", playerUpdate.P, 0.05f);
+			player.Velocity = playerUpdate.V;
+            player.FlipH = playerUpdate.F;
     }
 }

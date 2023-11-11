@@ -2,6 +2,8 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Shared;
+using Newtonsoft.Json;
 
 public partial class Server : Node
 {
@@ -45,12 +47,12 @@ public partial class Server : Node
 
 	public override void _PhysicsProcess(double delta)
 	{
-		// copy game data when using in the game loop
 		// GD.Print("Running game loop");
-		List<Player> playersCopy = gameData.Players.ToList();
-		playersCopy.ForEach(player => {
-			RpcId(0, nameof(UpdatePosition), player.GetId(), player.GetPosition(), player.GetVelocity(), player.GetFlipH());
-		});
+		// copy game data when using in the game loop
+		Dictionary<string, PlayerUpdate> playerUpdatesCopy = gameData.PlayerUpdateCollection.ToDictionary(entry => entry.Key, entry => entry.Value);
+		GameState gameState = new GameState(Time.GetTicksMsec(), playerUpdatesCopy);
+		string data = JsonConvert.SerializeObject(gameState);
+		RpcId(0, nameof(UpdateGameState), data);
 	}
 	
 	private void OnPeerConnected(long id)
@@ -61,45 +63,38 @@ public partial class Server : Node
 	private void OnPeerDisconnected(long id)
 	{
 		GD.Print("Peer disconnected: " + id);
-		gameData.RemovePlayer(gameData.Players.Find(player => player.GetId() == id));
-		RpcId(0, nameof(RemovePlayer), id);
+		gameData.RemovePlayer(id.ToString());
+		RpcId(0, nameof(RemovePlayer), id.ToString());
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
 	private void RequestSelectCharacter(string character) {
 		int id = Multiplayer.GetRemoteSenderId();
 		GD.Print($"RequestSelectCharacter: {id} {character}");
-		Player newPlayer = new Player(id, $"Player {id}", character, new Vector2(500, 500), new Vector2(0, 0), false);
-		gameData.AddPlayer(newPlayer);
-		RpcId(0, nameof(InstancePlayer), newPlayer.GetId(), newPlayer.GetName(), newPlayer.GetCharacter(), newPlayer.GetPosition(), newPlayer.GetVelocity(), newPlayer.GetFlipH());
-		gameData.Players.FindAll(p => p.GetId() != id).ForEach(player => {
-			RpcId(id, nameof(InstancePlayer), player.GetId(), player.GetName(), player.GetCharacter(), player.GetPosition(), player.GetVelocity(), player.GetFlipH());
-		});
+		PlayerUpdate playerUpdate = new PlayerUpdate(){
+			P = new Vector2(500, 500),
+			V = new Vector2(0, 0),
+			F = false,
+			C = character
+		};
+		string data = JsonConvert.SerializeObject(playerUpdate);
+		RpcId(0, nameof(InstancePlayer), id.ToString(), data);
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority)]
-	private void InstancePlayer(long id, string name, Vector2 position, float direction) {}
+	private void InstancePlayer(string id, string data) {}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority)]
-	private void RemovePlayer(long id) {}
+	private void RemovePlayer(string id) {}
 	
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
-	private void RequestUpdatePosition(Vector2 position, Vector2 velocity, bool flipH) {
+	private void RequestUpdatePlayer(string data) {
 		int id = Multiplayer.GetRemoteSenderId();
 		// GD.Print($"RequestUpdatePosition: {id} {position} {velocity} {flipH}");
-		// TODO: validate position
-		// TODO: data should be timestamped
-		// TODO: data should be indexed
-		Player player = gameData.Players.Find(player => player.GetId() == id);
-		if (player == null) {
-			GD.PrintErr($"RequestUpdatePosition: Player {id} not found");
-			return;
-		}
-		player.SetPosition(position);
-		player.SetVelocity(velocity);
-		player.SetFlipH(flipH);
+		PlayerUpdate player = JsonConvert.DeserializeObject<PlayerUpdate>(data);
+		gameData.ReceivePlayerUpdate(id.ToString(), player);
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
-	private void UpdatePosition(long id, Vector2 position, Vector2 velocity, bool flipH) {}
+	private void UpdateGameState(string data) {}
 }

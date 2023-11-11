@@ -4,6 +4,7 @@
 size = Vector2(1204, 95)
 
 [node name="World" type="Node2D"]
+position = Vector2(10, 0)
 
 [node name="Ground" type="StaticBody2D" parent="."]
 

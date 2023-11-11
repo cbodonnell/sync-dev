@@ -1,16 +1,24 @@
 using Godot;
+using Shared;
 using System;
 using System.Collections.Generic;
 
 public partial class GameData : Node
 {
-    public readonly List<Player> Players = new List<Player>();
+	public Dictionary<string, PlayerUpdate> PlayerUpdateCollection = new Dictionary<string, PlayerUpdate>();
 
-	public void AddPlayer(Player player) {
-		Players.Add(player);
+	public void RemovePlayer (string id) {
+		PlayerUpdateCollection.Remove(id);
 	}
 
-	public void RemovePlayer(Player player) {
-		Players.Remove(player);
+	public void ReceivePlayerUpdate(string id, PlayerUpdate playerState) {
+		// TODO: validate position
+		if (PlayerUpdateCollection.ContainsKey(id)) {
+			if (PlayerUpdateCollection[id].T < playerState.T) {
+				PlayerUpdateCollection[id] = playerState;
+			}
+		} else {
+			PlayerUpdateCollection.Add(id, playerState);
+		}
 	}
 }
