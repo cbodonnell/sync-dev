@@ -3,7 +3,7 @@ using Godot;
 
 public class PlayerUpdate {
     // T is the tick number
-    public ulong T { get; set; }
+    public ulong? T { get; set; }
 
     // P is the position
     public Vector2 P { get; set; }

@@ -12,7 +12,6 @@ public partial class GameData : Node
 	}
 
 	public void ReceivePlayerUpdate(string id, PlayerUpdate playerState) {
-		// TODO: validate position
 		if (PlayerUpdateCollection.ContainsKey(id)) {
 			if (PlayerUpdateCollection[id].T < playerState.T) {
 				PlayerUpdateCollection[id] = playerState;

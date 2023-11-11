@@ -1,10 +1,14 @@
-[gd_scene load_steps=2 format=3 uid="uid://csqws43jlysah"]
+[gd_scene load_steps=3 format=3 uid="uid://csqws43jlysah"]
+
+[ext_resource type="Script" path="res://Scenes/World/World.cs" id="1_ywk36"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_btxh8"]
 size = Vector2(1204, 95)
 
 [node name="World" type="Node2D"]
+y_sort_enabled = true
 position = Vector2(10, 0)
+script = ExtResource("1_ywk36")
 
 [node name="Ground" type="StaticBody2D" parent="."]
 

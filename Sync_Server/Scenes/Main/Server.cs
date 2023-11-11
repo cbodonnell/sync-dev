@@ -47,11 +47,22 @@ public partial class Server : Node
 
 	public override void _PhysicsProcess(double delta)
 	{
+		if (gameData.PlayerUpdateCollection.Count == 0) {
+			// no players connected, no need to run the game loop
+			return;
+		}
 		// GD.Print("Running game loop");
+		
+		// TODO: validate positions
+
 		// copy game data when using in the game loop
 		Dictionary<string, PlayerUpdate> playerUpdatesCopy = gameData.PlayerUpdateCollection.ToDictionary(entry => entry.Key, entry => entry.Value);
 		GameState gameState = new GameState(Time.GetTicksMsec(), playerUpdatesCopy);
+
+		// TODO: remove unnecessary data from the game state (e.g. client-side timestamps)
+
 		string data = JsonConvert.SerializeObject(gameState);
+
 		RpcId(0, nameof(UpdateGameState), data);
 	}
 	

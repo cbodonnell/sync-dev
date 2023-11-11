@@ -564,6 +564,7 @@ _data = {
 }
 
 [node name="Player" type="CharacterBody2D"]
+z_index = 2
 script = ExtResource("1_vtmy2")
 Speed = 750.0
 JumpVelocity = -1200.0
