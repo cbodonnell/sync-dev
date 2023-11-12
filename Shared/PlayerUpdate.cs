@@ -2,8 +2,8 @@
 using Godot;
 
 public class PlayerUpdate {
-    // T is the tick number
-    public ulong? T { get; set; }
+    // T is the unix timestamp
+    public double? T { get; set; }
 
     // P is the position
     public Vector2 P { get; set; }
@@ -25,8 +25,8 @@ public class PlayerUpdate {
         C = "";
     }
 
-    public PlayerUpdate(ulong tick, Vector2 position, Vector2 velocity, bool flipH, string character) {
-        T = tick;
+    public PlayerUpdate(double timestamp, Vector2 position, Vector2 velocity, bool flipH, string character) {
+        T = timestamp;
         P = position;
         V = velocity;
         F = flipH;

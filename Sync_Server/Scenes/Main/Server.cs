@@ -9,8 +9,8 @@ public partial class Server : Node
 {
 
 	[Export]
-	private string address = "127.0.0.1";
-	// private string address = "0.0.0.0";
+	// private string address = "127.0.0.1";
+	private string address = "0.0.0.0";
 
 	[Export]
 	private int port = 9999;
@@ -57,7 +57,7 @@ public partial class Server : Node
 
 		// copy game data when using in the game loop
 		Dictionary<string, PlayerUpdate> playerUpdatesCopy = gameData.PlayerUpdateCollection.ToDictionary(entry => entry.Key, entry => entry.Value);
-		GameState gameState = new GameState(Time.GetTicksMsec(), playerUpdatesCopy);
+		GameState gameState = new GameState(Time.GetUnixTimeFromSystem(), playerUpdatesCopy);
 
 		// TODO: remove unnecessary data from the game state (e.g. client-side timestamps)
 
@@ -79,6 +79,26 @@ public partial class Server : Node
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void FetchServerTime(double clientTime)
+	{
+		long id = Multiplayer.GetRemoteSenderId();
+		double serverTime = Time.GetUnixTimeFromSystem();
+		RpcId(id, nameof(SetServerTime), serverTime, clientTime);
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void SetServerTime(double serverTime, double clientTime) {}
+
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void CheckLatency(double clientTime) {
+		long id = Multiplayer.GetRemoteSenderId();
+		RpcId(id, nameof(SetLatency), clientTime);
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void SetLatency(double clientTime) {}
+
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
 	private void RequestSelectCharacter(string character) {
 		int id = Multiplayer.GetRemoteSenderId();
 		GD.Print($"RequestSelectCharacter: {id} {character}");
@@ -92,10 +112,10 @@ public partial class Server : Node
 		RpcId(0, nameof(InstancePlayer), id.ToString(), data);
 	}
 
-	[Rpc(MultiplayerApi.RpcMode.Authority)]
+	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
 	private void InstancePlayer(string id, string data) {}
 
-	[Rpc(MultiplayerApi.RpcMode.Authority)]
+	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
 	private void RemovePlayer(string id) {}
 	
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]

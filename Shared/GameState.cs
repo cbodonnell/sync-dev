@@ -1,11 +1,11 @@
 ﻿namespace Shared;
 
 public class GameState {
-    public ulong T { get; set; }
+    public double T { get; set; }
     public Dictionary<string, PlayerUpdate> P { get; set; }
 
-    public GameState(ulong tick, Dictionary<string, PlayerUpdate> playerUpdates) {
-        T = tick;
+    public GameState(double timestamp, Dictionary<string, PlayerUpdate> playerUpdates) {
+        T = timestamp;
         P = playerUpdates;
     }
 }

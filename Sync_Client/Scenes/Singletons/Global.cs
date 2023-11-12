@@ -24,10 +24,19 @@ public partial class Global : Node
         return player;
     }
     
-    public static void UpdateOtherPlayer(OtherPlayer player, PlayerUpdate playerUpdate)
+    public static void InterpolateOtherPlayer(OtherPlayer player, PlayerUpdate previousPlayerUpdate, PlayerUpdate newPlayerUpdate, float interpolationFactor)
     {
-			player.CreateTween().TweenProperty(player, "position", playerUpdate.P, 0.05f);
-			player.Velocity = playerUpdate.V;
-            player.FlipH = playerUpdate.F;
+			// player.CreateTween().TweenProperty(player, "position", newPlayerUpdate.P, 0.05f);
+            player.GlobalPosition = previousPlayerUpdate.P.Lerp(newPlayerUpdate.P, interpolationFactor);
+			player.Velocity = newPlayerUpdate.V;
+            player.FlipH = newPlayerUpdate.F;
+    }
+    
+    public static void ExtrapolateOtherPlayer(OtherPlayer player, PlayerUpdate previousPreviousPlayerUpdate, PlayerUpdate previousPlayerUpdate, float extrapolationFactor)
+    {
+            Vector2 positionDelta = previousPlayerUpdate.P - previousPreviousPlayerUpdate.P;
+            player.GlobalPosition = previousPlayerUpdate.P + positionDelta * extrapolationFactor;
+			player.Velocity = previousPlayerUpdate.V;
+            player.FlipH = previousPlayerUpdate.F;
     }
 }

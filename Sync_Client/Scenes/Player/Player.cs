@@ -107,7 +107,7 @@ public partial class Player : CharacterBody2D
 	{
 		PlayerUpdate playerUpdate = new PlayerUpdate()
 		{
-			T = Time.GetTicksMsec(),
+			T = server.ClientClock,
 			P = GlobalPosition,
 			V = Velocity,
 			F = FlipH,
