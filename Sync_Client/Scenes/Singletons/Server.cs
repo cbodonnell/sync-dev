@@ -78,7 +78,7 @@ public partial class Server : Node
 
 	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
 	private void SetServerTime(double serverTime, double clientTime) {
-		GD.Print($"Set server time {serverTime}");
+		// GD.Print($"{GetUniqueId()} - Set server time {serverTime}");
 		latency = (Time.GetUnixTimeFromSystem() - clientTime) / 2;
 		ServerTime = serverTime + latency;
 	}
@@ -109,7 +109,7 @@ public partial class Server : Node
 			}
 			deltaLatency = totalLatency / latencies.Count - latency;
 			latency = totalLatency / latencies.Count;
-			// GD.Print($"Latency: {latency}");
+			// GD.Print($"{GetUniqueId()} - Latency: {latency}");
 			latencies.Clear();
 		}
 	}

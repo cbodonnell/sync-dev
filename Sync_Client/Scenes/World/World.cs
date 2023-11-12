@@ -13,6 +13,11 @@ public partial class World : Node2D
 
 	private double lastGameStateUpdate = 0;
 	private List<GameState> gameStateBuffer = new List<GameState>();
+	
+	// Good rule of thumb seems to be server tickrate * 2
+	// to ensure we're mostly interpolating between two game states.
+	// Client could potentially request more frequent updates
+	// but this is a good starting point
 	private const double INTERPOLATION_OFFSET = 0.100; // 100ms
 
 
@@ -35,6 +40,7 @@ public partial class World : Node2D
 		}
 
 		if (gameStateBuffer.Count > 2) {
+			// GD.Print("Interpolating");
 			// we have a future game state, interpolate between the previous and the future game state
 			float interpolationFactor = (float)(renderTime - gameStateBuffer[1].T) / (float)(gameStateBuffer[2].T - gameStateBuffer[1].T);
 			foreach (KeyValuePair<string, PlayerUpdate> entry in gameStateBuffer[2].P)
@@ -61,6 +67,7 @@ public partial class World : Node2D
 				}
 			}
 		} else if (renderTime > gameStateBuffer[1].T) {
+			// GD.Print("Extrapolating");
 			// we have no future game state, extrapolate from the previous game state
 			float extrapolationFactor = (float)(renderTime - gameStateBuffer[0].T) / (float)(gameStateBuffer[1].T - gameStateBuffer[0].T) - 1.0f;
 			foreach (KeyValuePair<string, PlayerUpdate> entry in gameStateBuffer[1].P)
