@@ -8,8 +8,8 @@ public partial class Server : Node
 {
 
 	[Export]
-	// private string address = "127.0.0.1";
-	private string address = "10.8.0.1";
+	private string address = "127.0.0.1";
+	// private string address = "10.8.0.1";
 
 	[Export]
 	private int port = 9999;
@@ -18,7 +18,7 @@ public partial class Server : Node
 
 	private ENetConnection.CompressionMode compressionMode = ENetConnection.CompressionMode.RangeCoder;
 
-	public double ClientClock = Time.GetUnixTimeFromSystem();
+	public double ServerTime = 0;
 	private float decimalCollector = 0;
 	private List<double> latencies = new List<double>();
 	private double latency = 0;
@@ -34,7 +34,7 @@ public partial class Server : Node
 
 	public override void _PhysicsProcess(double delta)
 	{
-		ClientClock += delta + deltaLatency;
+		ServerTime += delta + deltaLatency;
 		deltaLatency = 0;
 	}
 
@@ -80,7 +80,7 @@ public partial class Server : Node
 	private void SetServerTime(double serverTime, double clientTime) {
 		GD.Print($"Set server time {serverTime}");
 		latency = (Time.GetUnixTimeFromSystem() - clientTime) / 2;
-		ClientClock = serverTime + latency;
+		ServerTime = serverTime + latency;
 	}
 
 	private void DetermineLatency() {
@@ -154,7 +154,7 @@ public partial class Server : Node
 		// GD.Print($"Update UpdateGameState {data}");
 		GameState gameState = JsonConvert.DeserializeObject<GameState>(data);
 		GetNode<World>("/root/World").UpdateGameState(gameState);
-		GD.Print($"UpdateGameState: {gameState.T} && ClientClock: {ClientClock}");
+		// GD.Print($"UpdateGameState: {gameState.T} && ClientClock: {ClientClock}");
 	}
 
 	public string GetUniqueId() {

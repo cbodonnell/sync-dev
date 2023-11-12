@@ -9,8 +9,8 @@ public partial class Server : Node
 {
 
 	[Export]
-	// private string address = "127.0.0.1";
-	private string address = "0.0.0.0";
+	private string address = "127.0.0.1";
+	// private string address = "0.0.0.0";
 
 	[Export]
 	private int port = 9999;

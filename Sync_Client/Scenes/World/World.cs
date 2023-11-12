@@ -29,7 +29,7 @@ public partial class World : Node2D
 			return;
 		}
 
-		double renderTime = server.ClientClock - INTERPOLATION_OFFSET;
+		double renderTime = server.ServerTime - INTERPOLATION_OFFSET;
 		while (gameStateBuffer.Count > 2 && gameStateBuffer[2].T < renderTime) {
 			gameStateBuffer.RemoveAt(0);
 		}
