@@ -145,10 +145,10 @@ public partial class Server : Node
 		RpcId(0, nameof(RequestUpdatePlayer), data);
 	}
 	
-	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
 	private void RequestUpdatePlayer(string data) {}
 
-	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
+	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
 	private void UpdateGameState(string data) {
 		if (!startedGame) return;
 		// GD.Print($"Update UpdateGameState {data}");

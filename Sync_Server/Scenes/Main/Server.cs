@@ -118,7 +118,7 @@ public partial class Server : Node
 	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
 	private void RemovePlayer(string id) {}
 	
-	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
 	private void RequestUpdatePlayer(string data) {
 		int id = Multiplayer.GetRemoteSenderId();
 		// GD.Print($"RequestUpdatePosition: {id} {position} {velocity} {flipH}");
@@ -126,6 +126,6 @@ public partial class Server : Node
 		gameData.ReceivePlayerUpdate(id.ToString(), player);
 	}
 
-	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
+	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
 	private void UpdateGameState(string data) {}
 }
