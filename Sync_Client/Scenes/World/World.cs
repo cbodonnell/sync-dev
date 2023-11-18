@@ -47,6 +47,7 @@ public partial class World : Node2D
 			{
 				string id = entry.Key;
 				if (id == server.GetUniqueId()) {
+					// TODO: make any corrections if necessary
 					continue;
 				}
 				if (!gameStateBuffer[1].P.ContainsKey(id)) {
@@ -74,6 +75,7 @@ public partial class World : Node2D
 			{
 				string id = entry.Key;
 				if (id == server.GetUniqueId()) {
+					// TODO: make any corrections if necessary
 					continue;
 				}
 				if (!gameStateBuffer[0].P.ContainsKey(id)) {

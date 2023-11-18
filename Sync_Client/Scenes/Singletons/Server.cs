@@ -140,15 +140,15 @@ public partial class Server : Node
 	}
 
 	public void SendPlayerUpdate(PlayerUpdate playerUpdate) {
-		// GD.Print($"Update position {position} {velocity} {flipH}");
 		string data = JsonConvert.SerializeObject(playerUpdate);
+		// GD.Print($"Send player update {data}");
 		RpcId(0, nameof(RequestUpdatePlayer), data);
 	}
 	
-	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
 	private void RequestUpdatePlayer(string data) {}
 
-	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
+	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
 	private void UpdateGameState(string data) {
 		if (!startedGame) return;
 		// GD.Print($"Update UpdateGameState {data}");
