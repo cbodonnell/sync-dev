@@ -19,6 +19,9 @@ public partial class Server : Node
 
 	private ENetMultiplayerPeer peer = new ENetMultiplayerPeer();
 
+	private int gameLoopCounter = 0;
+	private static int gameLoopInterval = 3; // 3 physics frames per game loop
+
 	private GameData gameData;
 	
 	private ENetConnection.CompressionMode compressionMode = ENetConnection.CompressionMode.RangeCoder;
@@ -47,6 +50,14 @@ public partial class Server : Node
 
 	public override void _PhysicsProcess(double delta)
 	{
+		gameLoopCounter++;
+		if (gameLoopCounter >= gameLoopInterval) {
+			gameLoopCounter = 0;
+			RunGameLoop();
+		}
+	}
+
+	private void RunGameLoop() {
 		if (gameData.PlayerUpdateCollection.Count == 0) {
 			// no players connected, no need to run the game loop
 			return;
@@ -58,8 +69,8 @@ public partial class Server : Node
 		// copy game data when using in the game loop
 		Dictionary<string, PlayerUpdate> playerUpdatesCopy = gameData.PlayerUpdateCollection.ToDictionary(entry => entry.Key, entry => entry.Value);
 		GameState gameState = new GameState(Time.GetUnixTimeFromSystem(), playerUpdatesCopy);
-
-		// TODO: remove unnecessary data from the game state (e.g. client-side timestamps)
+		gameData.AddGameState(gameState);
+		// TODO: remove unnecessary data from the game state before broadcasting (e.g. client-side timestamps)
 
 		string data = JsonConvert.SerializeObject(gameState);
 
@@ -75,6 +86,7 @@ public partial class Server : Node
 	{
 		GD.Print("Peer disconnected: " + id);
 		gameData.RemovePlayer(id.ToString());
+		GetNode<ServerWorld>("/root/ServerWorld").RemoveServerPlayer(id.ToString());
 		RpcId(0, nameof(RemovePlayer), id.ToString());
 	}
 
@@ -108,6 +120,10 @@ public partial class Server : Node
 			F = false,
 			C = character
 		};
+		gameData.ReceivePlayerUpdate(id.ToString(), playerUpdate);
+
+		GetNode<ServerWorld>("/root/ServerWorld").InstanceServerPlayer(id.ToString(), playerUpdate);
+
 		string data = JsonConvert.SerializeObject(playerUpdate);
 		RpcId(0, nameof(InstancePlayer), id.ToString(), data);
 	}
@@ -122,10 +138,19 @@ public partial class Server : Node
 	private void RequestUpdatePlayer(string data) {
 		int id = Multiplayer.GetRemoteSenderId();
 		// GD.Print($"RequestUpdatePosition: {id} {position} {velocity} {flipH}");
-		PlayerUpdate player = JsonConvert.DeserializeObject<PlayerUpdate>(data);
-		gameData.ReceivePlayerUpdate(id.ToString(), player);
+		PlayerUpdate playerUpdate = JsonConvert.DeserializeObject<PlayerUpdate>(data);
+		gameData.ReceivePlayerUpdate(id.ToString(), playerUpdate);
+		GetNode<ServerWorld>("/root/ServerWorld").UpdateServerPlayer(id.ToString(), playerUpdate);
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
 	private void UpdateGameState(string data) {}
+		
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
+	private void RequestSpawnAttack(string data) {
+		int id = Multiplayer.GetRemoteSenderId();
+		// GD.Print($"RequestUpdatePosition: {id} {position} {velocity} {flipH}");
+		SpawnAttack attack = JsonConvert.DeserializeObject<SpawnAttack>(data);
+		gameData.ReceiveSpawnAttack(id.ToString(), attack);
+	}
 }

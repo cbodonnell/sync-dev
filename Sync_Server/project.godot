@@ -11,21 +11,18 @@ config_version=5
 [application]
 
 config/name="Sync_Server"
-run/main_scene="res://Scenes/Main/Server.tscn"
+run/main_scene="res://Scenes/World/ServerWorld.tscn"
 config/features=PackedStringArray("4.1", "C#", "Mobile")
 config/icon="res://icon.svg"
 
 [autoload]
 
-GameData="*res://Singletons/GameData.cs"
+Server="*res://Scenes/Singletons/Server.cs"
+GameData="*res://Scenes/Singletons/GameData.cs"
 
 [dotnet]
 
 project/assembly_name="Server"
-
-[physics]
-
-common/physics_ticks_per_second=20
 
 [rendering]
 

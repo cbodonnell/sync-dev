@@ -1,0 +1,33 @@
+[gd_scene load_steps=3 format=3 uid="uid://b1vpv8kaxd75x"]
+
+[ext_resource type="Script" path="res://Scenes/World/ServerWorld.cs" id="1_7dtbp"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_btxh8"]
+size = Vector2(1204, 95)
+
+[node name="ServerWorld" type="Node2D"]
+y_sort_enabled = true
+position = Vector2(10, 0)
+script = ExtResource("1_7dtbp")
+
+[node name="Ground" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground"]
+position = Vector2(578, 656.5)
+shape = SubResource("RectangleShape2D_btxh8")
+
+[node name="Walls" type="Node2D" parent="."]
+
+[node name="Left" type="StaticBody2D" parent="Walls"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/Left"]
+position = Vector2(0.98, 326.5)
+rotation = 1.5708
+shape = SubResource("RectangleShape2D_btxh8")
+
+[node name="Right" type="StaticBody2D" parent="Walls"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/Right"]
+position = Vector2(1153, 326.5)
+rotation = 1.5708
+shape = SubResource("RectangleShape2D_btxh8")

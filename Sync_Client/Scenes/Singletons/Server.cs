@@ -72,6 +72,10 @@ public partial class Server : Node
 		GD.Print("Connection failed");
 		GetNode<Label>("/root/Menu/Label").Text = "Connection failed";
 	}
+	
+	public string GetUniqueId() {
+		return peer.GetUniqueId().ToString();
+	}
 
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
 	private void FetchServerTime(double clientTime) {}
@@ -157,7 +161,6 @@ public partial class Server : Node
 		// GD.Print($"UpdateGameState: {gameState.T} && ClientClock: {ClientClock}");
 	}
 
-	public string GetUniqueId() {
-		return peer.GetUniqueId().ToString();
-	}
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.UnreliableOrdered)]
+	private void RequestSpawnAttack(string data) {}
 }
