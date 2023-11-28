@@ -10,3 +10,9 @@ container:
 .PHONY: push
 push:
 	docker push cheebz/sync-server:$(VERSION)
+
+.PHONY: server-scenes
+server-scenes:
+	echo "Building Server scenes..."
+	cp ./Sync_Client/Scenes/World/World.tscn ./Sync_Server/Scenes/World/World.tscn
+	cp ./Sync_Client/Scenes/Player/Player.tscn ./Sync_Server/Scenes/Player/Player.tscn
