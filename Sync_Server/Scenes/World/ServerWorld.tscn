@@ -1,9 +1,12 @@
-[gd_scene load_steps=3 format=3 uid="uid://b1vpv8kaxd75x"]
+[gd_scene load_steps=4 format=3 uid="uid://b1vpv8kaxd75x"]
 
 [ext_resource type="Script" path="res://Scenes/World/ServerWorld.cs" id="1_7dtbp"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_btxh8"]
 size = Vector2(1204, 95)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xxxkw"]
+size = Vector2(374, 46.25)
 
 [node name="ServerWorld" type="Node2D"]
 y_sort_enabled = true
@@ -31,3 +34,9 @@ shape = SubResource("RectangleShape2D_btxh8")
 position = Vector2(1153, 326.5)
 rotation = 1.5708
 shape = SubResource("RectangleShape2D_btxh8")
+
+[node name="Platforms" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms"]
+position = Vector2(919, 474)
+shape = SubResource("RectangleShape2D_xxxkw")
